@@ -1,0 +1,89 @@
+name: nf-cgroup-metrics CI
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    name: Build and Test
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17']
+        nextflow: ['24.04', '24.10', '25.04.4', '25.10.3']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          architecture: x64
+
+      - name: Run unit tests
+        run: make test
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.daemon=false'
+
+      - name: Install Nextflow ${{ matrix.nextflow }}
+        uses: nf-core/setup-nextflow@v2
+        with:
+          version: ${{ matrix.nextflow }}
+
+      - name: Install plugin
+        run: make install
+
+      - name: Run without plugin (baseline)
+        run: |
+          mkdir -p baseline_run
+          cp validation/main.nf baseline_run/
+          cp validation/baseline.config baseline_run/nextflow.config
+          cd baseline_run
+          nextflow run main.nf -with-trace trace-baseline.txt
+          mv trace-baseline.txt ../validation/
+          cd ..
+          rm -rf baseline_run
+
+      - name: Run with plugin
+        run: |
+          cd validation
+          nextflow run main.nf -plugins nf-cgroup-metrics@1.0.0 -with-trace trace-plugin.txt
+
+      - name: Compare peak_vmem
+        run: |
+          cd validation
+          baseline_vmem=$(tail -1 trace-baseline.txt | cut -f12 | sed 's/[^0-9.]//g')
+          plugin_vmem=$(tail -1 trace-plugin.txt | cut -f12 | sed 's/[^0-9.]//g')
+
+          echo "Baseline peak_vmem: $baseline_vmem MB"
+          echo "Plugin peak_vmem: $plugin_vmem MB"
+
+          failed=0
+
+          if awk "BEGIN {exit !($baseline_vmem < 20)}"; then
+            echo "PASS: Baseline < 20 MB ($baseline_vmem)"
+          else
+            echo "FAIL: Baseline >= 20 MB ($baseline_vmem)"
+            failed=1
+          fi
+
+          if awk "BEGIN {exit !($plugin_vmem > 150)}"; then
+            echo "PASS: Plugin > 150 MB ($plugin_vmem)"
+          else
+            echo "FAIL: Plugin <= 150 MB ($plugin_vmem)"
+            failed=1
+          fi
+
+          exit $failed

@@ -1,0 +1,19 @@
+plugins {
+    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.14'
+}
+
+version = '1.0.0'
+
+nextflowPlugin {
+    nextflowVersion = '24.04.0'
+    provider = 'Watchmaker Genomics'
+    className = 'com.watchmakergenomics.cgroup.CgroupMetricsPlugin'
+    extensionPoints = [
+        'com.watchmakergenomics.cgroup.CgroupObserverFactory'
+    ]
+    description = 'Cgroup v1/v2 memory tracking for Nextflow tasks in containerized environments'
+}
+
+test {
+    useJUnitPlatform()
+}
