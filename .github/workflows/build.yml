@@ -59,7 +59,7 @@ jobs:
       - name: Run with plugin
         run: |
           cd validation
-          nextflow run main.nf -plugins nf-cgroup-metrics@1.0.0 -with-trace trace-plugin.txt
+          nextflow run main.nf -plugins nf-cgroup-metrics@1.0.1 -with-trace trace-plugin.txt
 
       - name: Compare peak_vmem
         run: |

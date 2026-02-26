@@ -25,7 +25,7 @@ cd nf-cgroup-metrics
 make install
 ```
 
-This installs the plugin to `~/.nextflow/plugins/nf-cgroup-metrics-1.0.0/`.
+This installs the plugin to `~/.nextflow/plugins/nf-cgroup-metrics-1.0.1/`.
 
 ### Configuration
 
@@ -33,7 +33,7 @@ Add to your `nextflow.config`:
 
 ```groovy
 plugins {
-    id 'nf-cgroup-metrics@1.0.0'
+    id 'nf-cgroup-metrics@1.0.1'
 }
 ```
 
@@ -56,7 +56,7 @@ The plugin only modifies containerized tasks. Tasks running on the local executo
 
 ```groovy
 plugins {
-    id 'nf-cgroup-metrics@1.0.0'
+    id 'nf-cgroup-metrics@1.0.1'
 }
 
 process {
@@ -125,7 +125,7 @@ ls /sys/fs/cgroup/cgroup.controllers 2>/dev/null && echo "v2" || echo "v1 or non
 cat /proc/self/cgroup
 
 # Check plugin installation
-ls ~/.nextflow/plugins/nf-cgroup-metrics-1.0.0/
+ls ~/.nextflow/plugins/nf-cgroup-metrics-1.0.1/
 
 # Enable Nextflow debug mode
 NXF_DEBUG=1 nextflow run main.nf
