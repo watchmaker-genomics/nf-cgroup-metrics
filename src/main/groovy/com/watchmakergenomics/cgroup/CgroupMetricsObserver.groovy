@@ -81,9 +81,16 @@ class CgroupMetricsObserver implements TraceObserver {
 
         def tempFile = wrapperFile.resolveSibling(".command.run.tmp.${System.nanoTime()}")
         Files.write(tempFile, modifiedScript.getBytes("UTF-8"))
-        Files.move(tempFile, wrapperFile,
-                   StandardCopyOption.ATOMIC_MOVE,
-                   StandardCopyOption.REPLACE_EXISTING)
+        try {
+            Files.move(tempFile, wrapperFile,
+                       StandardCopyOption.ATOMIC_MOVE,
+                       StandardCopyOption.REPLACE_EXISTING)
+        } catch (Exception e) {
+            // S3 and other remote filesystems don't support atomic move.
+            // Write directly — S3 PUTs are already atomic at the object level.
+            Files.delete(tempFile)
+            Files.write(wrapperFile, modifiedScript.getBytes("UTF-8"))
+        }
 
         log.debug "Injected cgroup memory tracking into ${task.name}"
     }
